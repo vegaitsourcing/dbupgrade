@@ -1,0 +1,1 @@
+create table Company (CompanyId int, Name nvarchar(30))

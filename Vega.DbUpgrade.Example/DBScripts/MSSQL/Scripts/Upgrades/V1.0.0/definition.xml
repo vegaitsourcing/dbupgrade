@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Files>
+  <File>
+    <Id>{DEA469E4-0D2E-4b00-B833-3B550F0A0732}</Id>
+    <Path>Tables\BackendUser.sql</Path>
+  </File>  
+  <File>
+    <Id>{63ECFE2F-1C8A-4189-8049-C48049C294A4}</Id>
+    <Path>Tables\Company.sql</Path>
+  </File>
+</Files>

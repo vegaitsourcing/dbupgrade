@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Files>
+  <File>
+    <Id>{C28FF29F-080D-44b2-802D-5B41A5540179}</Id>
+    <Path>AddUsers.sql</Path>
+  </File>
+  <File>
+    <Id>{9E16BDC5-68B6-459a-92DF-90D90E3E8C3B}</Id>
+    <Path>Data\AddCompanies.sql</Path>
+  </File>
+</Files>

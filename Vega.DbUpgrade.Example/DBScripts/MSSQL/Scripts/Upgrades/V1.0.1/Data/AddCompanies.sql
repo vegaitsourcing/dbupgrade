@@ -1,0 +1,1 @@
+insert into Company (CompanyId, Name) values (1, 'Vega IT Sourcing')

@@ -1,0 +1,1 @@
+create table BackendUser (BackendUserId int, Username nvarchar(30))
