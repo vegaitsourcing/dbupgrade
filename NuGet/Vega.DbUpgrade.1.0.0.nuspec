@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>Vega.DbUpgrade</id>
+        <version>1.0.0</version>
+        <title>Vega Db Upgrade tool</title>
+        <authors>Vega IT Sourcing</authors>
+        <owners>vegait</owners>
+        <licenseUrl>https://github.com/vegaitsourcing/dbupgrade/blob/master/LICENSE</licenseUrl>
+        <projectUrl>https://github.com/vegaitsourcing/dbupgrade</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <developmentDependency>true</developmentDependency>
+        <description>DbUpgrade tool is an open source (LPGL) console application created for managing SQL Server/MySQL and FireBird database upgrades.</description>
+        <copyright>© Vega IT Sourcing DOO. All rights reserved.</copyright>
+        <tags>VegaIT DbUgrade</tags>
+    </metadata>
+    <files>
+        <file src="..\Vega.DbUpgrade\bin\Release\Vega.DbUpgrade.exe" target="content\Vega.DbUpgrade.exe" />
+        <file src="..\Vega.DbUpgrade\bin\Release\Vega.DbUpgrade.exe.config" target="content\Vega.DbUpgrade.exe.config" />
+        <file src="..\LICENSE" target="LICENSE" />
+    </files>
+</package>
