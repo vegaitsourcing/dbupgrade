@@ -45,7 +45,7 @@ namespace Vega.DbUpgrade.DbProviders
                 using (var command = _database.GetDbCommand())
                 {
                     command.Connection = connection;
-
+                    command.CommandTimeout = 0;
                     connection.Open();
 
                     var commands = ParseSqlScript(fileContent);
