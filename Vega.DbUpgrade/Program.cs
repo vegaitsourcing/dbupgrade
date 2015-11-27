@@ -15,6 +15,11 @@ namespace Vega.DbUpgrade
     {
         #region [Public Methods]
 
+        private const int Success = 0;
+        private const int ErrorOccured = 160;
+        private const int ScriptDirectoryDoesntExist = 270;
+        private const int UnknownDatabase = 490;
+
         /// <summary>
         /// Starting point of DbUpgrade console application.
         /// </summary>
@@ -29,67 +34,83 @@ namespace Vega.DbUpgrade
                 var usCulture = new CultureInfo("en-US");
                 Thread.CurrentThread.CurrentCulture = usCulture;
                 ///////////////////////////////////////////////////
+                
+                DbUpgraderStatus res;
+                string scriptsFolderPath = null;
 
-                try
+            try
+            {
+                // Set current directory
+                var exeFile = new FileInfo(Assembly.GetExecutingAssembly().Location);
+                if (exeFile.DirectoryName != null)
                 {
-                    // Set current directory
-                    var exeFile = new FileInfo(Assembly.GetExecutingAssembly().Location);
-                    if (exeFile.DirectoryName != null)
+                    Environment.CurrentDirectory = exeFile.DirectoryName;
+                }
+
+                if (args.Length > 0)
+                {
+                    var initialDirectory = string.Empty;
+                    var action = args[0].ToLower();
+
+                    switch (action)
                     {
-                        Environment.CurrentDirectory = exeFile.DirectoryName;
+                        case Constants.CommandLineOptions.ScriptsFolderPath:
+
+                            scriptsFolderPath = args[1];
+                            break;
+
+                        case Constants.CommandLineOptions.Generate:
+                            if (args.Length > 1)
+                            {
+                                initialDirectory = args[1].ToLower();
+                            }
+
+                            CreateDemoDirectories(initialDirectory);
+
+                            return;
+                        case Constants.CommandLineOptions.Help:
+                            showHelp = true;
+                            break;
+                        default:
+                            showHelp = true;
+                            break;
                     }
 
-                    if (args.Length > 0)
+                    if (showHelp)
                     {
-                        var initialDirectory = string.Empty;
-                        var action = args[0].ToLower();
-
-                        switch (action)
-                        {
-                            case Constants.CommandLineOptions.Generate:
-                                if (args.Length > 1)
-                                {
-                                    initialDirectory = args[1].ToLower();
-                                }
-
-                                CreateDemoDirectories(initialDirectory);
-                                break;
-                            case Constants.CommandLineOptions.Help:
-                                showHelp = true;
-                                break;
-                            default: 
-                                showHelp = true;
-                                break;
-                        }
-
-                        if (showHelp)
-                        {
-                            DisplayHelpMessage();
-                        }
-                    }
-                    else
-                    {
-                        DbUpgraderStatus res;
-                        var scriptsFolderPath = ConfigurationManager.AppSettings[Constants.AppSettingKeys.ScriptsFolder];
-                        if (Directory.Exists(scriptsFolderPath))
-                        {
-                            var upgrader = new DbUpgrader();
-                            res = upgrader.Update(scriptsFolderPath);
-                        }
-                        else
-                        {
-                            res = DbUpgraderStatus.NonExistingScriptsFolder;
-                        }
-
-                        WriteMessage(res);
+                        DisplayHelpMessage();
+                        return;
                     }
                 }
-                catch (Exception ex)
+
+                // check if the Scripts has been passed via argument.
+                if (string.IsNullOrEmpty(scriptsFolderPath))
                 {
-                    Console.WriteLine(ex.Message);
-                    Console.WriteLine(ex.StackTrace);
-                }        
+                    scriptsFolderPath = ConfigurationManager.AppSettings[Constants.AppSettingKeys.ScriptsFolder];
+                }
+
+                if (Directory.Exists(scriptsFolderPath))
+                {
+                    var upgrader = new DbUpgrader();
+                    res = upgrader.Update(scriptsFolderPath);
+                }
+                else
+                {
+                    res = DbUpgraderStatus.NonExistingScriptsFolder;
+                }
+
+                WriteMessage(res);
+
+                Environment.Exit(0);
+
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.StackTrace);
+                Environment.Exit(ErrorOccured);
+            }
+        }
 
         #endregion
 
@@ -141,6 +162,8 @@ namespace Vega.DbUpgrade
         /// </summary>
         private static void DisplayHelpMessage()
         {
+            Console.WriteLine(Assembly.GetExecutingAssembly().ManifestModule.Name + @" -scriptsFolderPath [<root scripts folder path>]");
+            Console.WriteLine(string.Empty);
             Console.WriteLine(Assembly.GetExecutingAssembly().ManifestModule.Name + @" -generate [<output folder>]");
             Console.WriteLine(string.Empty);
             Console.WriteLine("Example:" + Environment.NewLine);
@@ -158,15 +181,19 @@ namespace Vega.DbUpgrade
             {
                 case DbUpgraderStatus.Success:
                     Console.WriteLine(Constants.Messages.DbSuccUpdated);
+                    Environment.Exit(Success);
                     break;
                 case DbUpgraderStatus.Error:
                     Console.WriteLine(Constants.Messages.DbNotUpdated);
+                    Environment.Exit(ErrorOccured);
                     break;
                 case DbUpgraderStatus.NonExistingScriptsFolder:
                     Console.WriteLine(Constants.Messages.NonExistingScriptsFolder);
+                    Environment.Exit(ScriptDirectoryDoesntExist);
                     break;
                 case DbUpgraderStatus.UnknownDatabase:
                     Console.WriteLine(Constants.Messages.UnknownDatabase);
+                    Environment.Exit(UnknownDatabase);
                     break;
             }
         }

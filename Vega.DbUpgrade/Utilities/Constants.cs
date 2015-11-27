@@ -333,6 +333,11 @@
             public const string Generate = "-generate";
 
             /// <summary>
+            /// The scripts folder path
+            /// </summary>
+            public const string ScriptsFolderPath = "-scriptsFolderPath";
+
+            /// <summary>
             /// Help switch
             /// </summary>
             public const string Help = "-help";
