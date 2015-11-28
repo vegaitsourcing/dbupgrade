@@ -26,18 +26,15 @@ namespace Vega.DbUpgrade
         /// <param name="args">Input arguments.</param>
         public static void Main(string[] args)
         {
-                var showHelp = false;
+            //quick fix
+            //TODO: check if there is a better solution
+            ///////////////////////////////////////////////////
+            var usCulture = new CultureInfo("en-US");
+            Thread.CurrentThread.CurrentCulture = usCulture;
+            ///////////////////////////////////////////////////
 
-                //quick fix
-                //TODO: check if there is a better solution
-                ///////////////////////////////////////////////////
-                var usCulture = new CultureInfo("en-US");
-                Thread.CurrentThread.CurrentCulture = usCulture;
-                ///////////////////////////////////////////////////
-                
-                DbUpgraderStatus res;
-                string scriptsFolderPath = null;
-
+            var scriptsFolderPath = string.Empty;
+            var fromVersion = string.Empty;
             try
             {
                 // Set current directory
@@ -47,39 +44,40 @@ namespace Vega.DbUpgrade
                     Environment.CurrentDirectory = exeFile.DirectoryName;
                 }
 
+                if (args.Length == 1 && args[0] == Constants.CommandLineOptions.Help)
+                {
+                    DisplayHelpMessage();
+                    return;
+                }
+
                 if (args.Length > 0)
                 {
                     var initialDirectory = string.Empty;
-                    var action = args[0].ToLower();
 
-                    switch (action)
+                    for (var i = 0; i < args.Length; i += 2)
                     {
-                        case Constants.CommandLineOptions.ScriptsFolderPath:
+                        var action = args[i].ToLower();
 
-                            scriptsFolderPath = args[1];
-                            break;
+                        switch (action)
+                        {
+                            case Constants.CommandLineOptions.FromVersion:
+                                fromVersion = args[i + 1];
+                                break;
+                            case Constants.CommandLineOptions.ScriptsFolderPath:
 
-                        case Constants.CommandLineOptions.Generate:
-                            if (args.Length > 1)
-                            {
-                                initialDirectory = args[1].ToLower();
-                            }
+                                scriptsFolderPath = args[i + 1];
+                                break;
 
-                            CreateDemoDirectories(initialDirectory);
+                            case Constants.CommandLineOptions.Generate:
+                                if (args.Length > i + 1)
+                                {
+                                    initialDirectory = args[i + 1].ToLower();
+                                }
 
-                            return;
-                        case Constants.CommandLineOptions.Help:
-                            showHelp = true;
-                            break;
-                        default:
-                            showHelp = true;
-                            break;
-                    }
+                                CreateDemoDirectories(initialDirectory);
 
-                    if (showHelp)
-                    {
-                        DisplayHelpMessage();
-                        return;
+                                return;
+                        }
                     }
                 }
 
@@ -89,16 +87,17 @@ namespace Vega.DbUpgrade
                     scriptsFolderPath = ConfigurationManager.AppSettings[Constants.AppSettingKeys.ScriptsFolder];
                 }
 
+                DbUpgraderStatus res;
                 if (Directory.Exists(scriptsFolderPath))
                 {
                     var upgrader = new DbUpgrader();
-                    res = upgrader.Update(scriptsFolderPath);
+                    res = upgrader.Update(scriptsFolderPath, fromVersion);
                 }
                 else
                 {
                     res = DbUpgraderStatus.NonExistingScriptsFolder;
                 }
-
+                 
                 WriteMessage(res);
 
                 Environment.Exit(0);

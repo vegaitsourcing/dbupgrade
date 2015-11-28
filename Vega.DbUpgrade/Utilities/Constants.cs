@@ -335,12 +335,17 @@
             /// <summary>
             /// The scripts folder path
             /// </summary>
-            public const string ScriptsFolderPath = "-scriptsFolderPath";
+            public const string ScriptsFolderPath = "-scriptsfolderpath";
 
             /// <summary>
             /// Help switch
             /// </summary>
             public const string Help = "-help";
+
+            /// <summary>
+            /// From version
+            /// </summary>
+            public const string FromVersion = "-fromversion";
         }
     }
 }

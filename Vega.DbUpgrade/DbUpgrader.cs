@@ -33,13 +33,17 @@ namespace Vega.DbUpgrade
         
         #region [Public Methods]
         /// <summary>
-        /// Updates database with scripts from <paramref name="scriptsFolder"/> folder.
+        /// Updates database with scripts from <paramref name="scriptsFolder" /> folder.
         /// </summary>
         /// <param name="scriptsFolder">Path to the folder on file system which contains scripts for database update</param>
-        /// <returns><see cref="Vega.DbUpgrade.Utilities.DbUpgraderStatus"/> value.</returns>
-        public DbUpgraderStatus Update(string scriptsFolder)
+        /// <param name="fromVersion">From version. Set null if you'd like to perform the installation from all versions.</param>
+        /// <returns>
+        ///   <see cref="Vega.DbUpgrade.Utilities.DbUpgraderStatus" /> value.
+        /// </returns>
+        public DbUpgraderStatus Update(string scriptsFolder, string fromVersion)
         {
             var retVal = DbUpgraderStatus.Success;
+            var isFromVersionFound = false;
             if (_provider != null)
             {
                 var scriptsDirInfo = new DirectoryInfo(scriptsFolder);
@@ -68,7 +72,20 @@ namespace Vega.DbUpgrade
                                     var versionDir =
                                         new DirectoryInfo(upgradeDir.FullName + Path.DirectorySeparatorChar +
                                                           xmlNode.InnerText);
-                                    versionDirs.Add(versionDir);
+
+                                    // if the version folder name has been passed, check if the folder is found.
+                                    if (!isFromVersionFound && !string.IsNullOrEmpty(fromVersion) &&
+                                        xmlNode.InnerText.ToLower() == fromVersion.ToLower())
+                                    {
+                                        isFromVersionFound = true;
+                                    }
+
+                                    // In case the from version value has been passed, and the version has been found,
+                                    // set add the version folder to the list. all the following versions will be added as well.
+                                    if (string.IsNullOrEmpty(fromVersion) || isFromVersionFound)
+                                    {
+                                        versionDirs.Add(versionDir);
+                                    }
                                 }
                             }
                         }
