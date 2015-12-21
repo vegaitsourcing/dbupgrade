@@ -30,7 +30,7 @@
         /// Database successfully updated.
         /// </summary>
         Success,
-        
+
         /// <summary>
         /// Error during database update.
         /// </summary>
@@ -44,6 +44,12 @@
         /// <summary>
         /// Database is unknown.
         /// </summary>
-        UnknownDatabase
+        UnknownDatabase,
+
+
+        /// <summary>
+        /// The non existing version folder.
+        /// </summary>
+        NonExistingVersionFolder
     }
 }

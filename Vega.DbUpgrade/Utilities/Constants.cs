@@ -286,6 +286,11 @@
             /// Error in script message string format.
             /// </summary>
             public const string ErrorInScriptMessage = "Encounter error in script file: {0}; ";
+
+            /// <summary>
+            /// The non existing version folder
+            /// </summary>
+            public const string NonExistingVersionFolder = "The passed versionfolder doesn't exist.";
         }
 
         /// <summary>

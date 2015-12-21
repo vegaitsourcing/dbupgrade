@@ -36,7 +36,7 @@ namespace Vega.DbUpgrade
         /// Updates database with scripts from <paramref name="scriptsFolder" /> folder.
         /// </summary>
         /// <param name="scriptsFolder">Path to the folder on file system which contains scripts for database update</param>
-        /// <param name="fromVersion">From version. Set null if you'd like to perform the installation from all versions.</param>
+        /// <param name="fromVersion">From version. Set null if you'd like to perform the installation for all versions.</param>
         /// <returns>
         ///   <see cref="Vega.DbUpgrade.Utilities.DbUpgraderStatus" /> value.
         /// </returns>
@@ -96,8 +96,15 @@ namespace Vega.DbUpgrade
                             versionDirs.AddRange(versions);
                         }
 
-                        // Execute SQL scripts
-                        retVal = ExecuteScripts(versionDirs, true);
+                        if (!string.IsNullOrEmpty(fromVersion) && versionDirs.Count == 0)
+                        {
+                            retVal = DbUpgraderStatus.NonExistingVersionFolder;
+                        }
+                        else
+                        {
+                            // Execute SQL scripts
+                            retVal = ExecuteScripts(versionDirs, true);
+                        }
                     }
 
                     if (retVal == DbUpgraderStatus.Success)

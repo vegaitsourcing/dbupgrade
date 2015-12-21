@@ -19,6 +19,7 @@ namespace Vega.DbUpgrade
         private const int ErrorOccured = 160;
         private const int ScriptDirectoryDoesntExist = 270;
         private const int UnknownDatabase = 490;
+        private const int VersionFolderDoesntExist = 520;
 
         /// <summary>
         /// Starting point of DbUpgrade console application.
@@ -99,9 +100,6 @@ namespace Vega.DbUpgrade
                 }
                  
                 WriteMessage(res);
-
-                Environment.Exit(0);
-
             }
             catch (Exception ex)
             {
@@ -193,6 +191,10 @@ namespace Vega.DbUpgrade
                 case DbUpgraderStatus.UnknownDatabase:
                     Console.WriteLine(Constants.Messages.UnknownDatabase);
                     Environment.Exit(UnknownDatabase);
+                    break;
+                case DbUpgraderStatus.NonExistingVersionFolder:
+                    Console.WriteLine(Constants.Messages.NonExistingVersionFolder);
+                    Environment.Exit(VersionFolderDoesntExist);
                     break;
             }
         }
