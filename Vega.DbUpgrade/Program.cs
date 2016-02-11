@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Vega.DbUpgrade.Utilities;   
@@ -36,6 +38,7 @@ namespace Vega.DbUpgrade
 
             var scriptsFolderPath = string.Empty;
             var fromVersion = string.Empty;
+            var placeholdersWithValues = new Dictionary<string, string>();
             try
             {
                 // Set current directory
@@ -69,6 +72,28 @@ namespace Vega.DbUpgrade
                                 scriptsFolderPath = args[i + 1];
                                 break;
 
+                            case Constants.CommandLineOptions.PlaceholdersWithValues:
+                                {
+                                    if (args.Length > i + 1)
+                                    {
+                                        var argValue = args[i + 1];
+                                        foreach (
+                                            var keyValuePairSplitted in
+                                                argValue.Split(Constants.Delimiters.KeyValuePairDelimiter)
+                                                        .Select(
+                                                            keyValuePair =>
+                                                            keyValuePair.Split(Constants.Delimiters.KeyValueDelimiter)))
+                                        {
+                                            placeholdersWithValues.Add(keyValuePairSplitted[0],
+                                                                       keyValuePairSplitted.Length > 1
+                                                                           ? keyValuePairSplitted[1]
+                                                                           : string.Empty);
+                                        }
+                                    }
+
+                                    break;
+                                }
+
                             case Constants.CommandLineOptions.Generate:
                                 if (args.Length > i + 1)
                                 {
@@ -92,7 +117,7 @@ namespace Vega.DbUpgrade
                 if (Directory.Exists(scriptsFolderPath))
                 {
                     var upgrader = new DbUpgrader();
-                    res = upgrader.Update(scriptsFolderPath, fromVersion);
+                    res = upgrader.Update(scriptsFolderPath, fromVersion, placeholdersWithValues);
                 }
                 else
                 {

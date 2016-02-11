@@ -351,6 +351,27 @@
             /// From version
             /// </summary>
             public const string FromVersion = "-fromversion";
+
+            /// <summary>
+            /// The placeholders with values
+            /// </summary>
+            public const string PlaceholdersWithValues = "-placeholderswithvalues";
+        }
+
+        /// <summary>
+        /// String delimiters.
+        /// </summary>
+        public class Delimiters
+        {
+            /// <summary>
+            /// The key value pair delimiter
+            /// </summary>
+            public const char KeyValuePairDelimiter = '|';
+
+            /// <summary>
+            /// The key value delimiter
+            /// </summary>
+            public const char KeyValueDelimiter = ':';
         }
     }
 }

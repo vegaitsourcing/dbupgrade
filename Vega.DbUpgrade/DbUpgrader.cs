@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
+using System.Linq;
 using System.Xml;
 
 using Vega.DbUpgrade.Interfaces;
@@ -37,10 +38,11 @@ namespace Vega.DbUpgrade
         /// </summary>
         /// <param name="scriptsFolder">Path to the folder on file system which contains scripts for database update</param>
         /// <param name="fromVersion">From version. Set null if you'd like to perform the installation for all versions.</param>
+        /// <param name="placeholdersKeyValuePairs">The placeholders key value pairs.</param>
         /// <returns>
         ///   <see cref="Vega.DbUpgrade.Utilities.DbUpgraderStatus" /> value.
         /// </returns>
-        public DbUpgraderStatus Update(string scriptsFolder, string fromVersion)
+        public DbUpgraderStatus Update(string scriptsFolder, string fromVersion, Dictionary<string, string> placeholdersKeyValuePairs)
         {
             var retVal = DbUpgraderStatus.Success;
             var isFromVersionFound = false;
@@ -103,7 +105,7 @@ namespace Vega.DbUpgrade
                         else
                         {
                             // Execute SQL scripts
-                            retVal = ExecuteScripts(versionDirs, true);
+                            retVal = ExecuteScripts(versionDirs, true, placeholdersKeyValuePairs);
                         }
                     }
 
@@ -113,7 +115,7 @@ namespace Vega.DbUpgrade
                         var commonDir = FileHelper.GetSubDirectoryByName(scriptsDirInfo, Constants.FileFolderNames.CommonFolderName, SearchOption.TopDirectoryOnly);
                         if (commonDir != null && commonDir.Exists)
                         {
-                            retVal = ExecuteScripts(commonDir);
+                            retVal = ExecuteScripts(commonDir, placeholdersKeyValuePairs);
                         }
                     }
                 }
@@ -136,12 +138,15 @@ namespace Vega.DbUpgrade
         /// Executes SQL scripts in database from given directory.
         /// </summary>
         /// <param name="directory">Directory with SQL scripts.</param>
-        /// <returns><see cref="Vega.DbUpgrade.Utilities.DbUpgraderStatus"/> value.</returns>
-        private DbUpgraderStatus ExecuteScripts(DirectoryInfo directory)
+        /// <param name="placeholdersKeyValuePairs">The placeholders key value pairs.</param>
+        /// <returns>
+        ///   <see cref="Vega.DbUpgrade.Utilities.DbUpgraderStatus" /> value.
+        /// </returns>
+        private DbUpgraderStatus ExecuteScripts(DirectoryInfo directory, Dictionary<string, string> placeholdersKeyValuePairs)
         {
             var dirs = new List<DirectoryInfo> {directory};
 
-            return ExecuteScripts(dirs, false);
+            return ExecuteScripts(dirs, false, placeholdersKeyValuePairs);
         }
 
         /// <summary>
@@ -149,8 +154,11 @@ namespace Vega.DbUpgrade
         /// </summary>
         /// <param name="dirs">Directories with SQL scripts.</param>
         /// <param name="updateChangeLog">if <c>true</c> ChangeLog table in database will be updated.</param>
-        /// <returns><see cref="Vega.DbUpgrade.Utilities.DbUpgraderStatus"/> value.</returns>
-        private DbUpgraderStatus ExecuteScripts(List<DirectoryInfo> dirs, bool updateChangeLog)
+        /// <param name="placeholdersKeyValuePairs">The placeholders key value pairs.</param>
+        /// <returns>
+        ///   <see cref="Vega.DbUpgrade.Utilities.DbUpgraderStatus" /> value.
+        /// </returns>
+        private DbUpgraderStatus ExecuteScripts(List<DirectoryInfo> dirs, bool updateChangeLog, Dictionary<string, string> placeholdersKeyValuePairs)
         {
             var retVal = DbUpgraderStatus.Success;
             if (updateChangeLog)
@@ -158,10 +166,8 @@ namespace Vega.DbUpgrade
                 // Check definition.xml files. Each version should have a definition.xml file
                 CheckDefinitionFiles(dirs);
 
-                for (var i = 0; i < dirs.Count; i++)
+                foreach (var version in dirs)
                 {
-                    var version = dirs[i];
-
                     // Execute scripts by order defined in xml definition file
                     var definitionFile = FileHelper.GetFileByName(version, Constants.FileFolderNames.DefinitionFileName, SearchOption.TopDirectoryOnly);
                     var defXmlDoc = new XmlDocument();
@@ -192,11 +198,25 @@ namespace Vega.DbUpgrade
                                     Console.Write(String.Concat(Constants.Messages.ScriptExecutionFormatMessage,
                                                                 fileFullName));
 
+                                    // replace the placeholders in the scripts if exists.
+                                    if (placeholdersKeyValuePairs != null && placeholdersKeyValuePairs.Count > 0)
+                                    {
+                                        fileContent =
+                                            placeholdersKeyValuePairs.Where(
+                                                placeholdersKeyValuePair =>
+                                                !string.IsNullOrEmpty(placeholdersKeyValuePair.Value))
+                                                                     .Aggregate(fileContent,
+                                                                                (current, placeholdersKeyValuePair) =>
+                                                                                current.Replace(
+                                                                                    placeholdersKeyValuePair.Key,
+                                                                                    placeholdersKeyValuePair.Value));
+                                    }
+
                                     var res = _provider.ExecuteScript(fileId, fileContent, fileRelPath);
 
                                     var status = res
-                                                        ? Constants.Messages.SuccessMessage
-                                                        : Constants.Messages.FailureMessage;
+                                                     ? Constants.Messages.SuccessMessage
+                                                     : Constants.Messages.FailureMessage;
                                     Console.WriteLine(status);
 
                                     if (!res)
@@ -212,23 +232,25 @@ namespace Vega.DbUpgrade
             }
             else
             {
-                for (var i = 0; i < dirs.Count; i++)
+                foreach (var directory in dirs)
                 {
-                    var sqlFiles = dirs[i].GetFiles(Constants.FileExtensions.Sql, SearchOption.AllDirectories);
+                    var sqlFiles = directory.GetFiles(Constants.FileExtensions.Sql, SearchOption.AllDirectories);
 
-                    for (var j = 0; j < sqlFiles.Length; j++)
-                    {                        
-                        var fileContent = FileHelper.GetFileContent(sqlFiles[j].FullName);
-                        var res = _provider.ExecuteScript(fileContent);                        
+                    foreach (var sqlFile in sqlFiles)
+                    {
+                        var fullName = sqlFile.FullName;
 
-                        if (!res)
-                        {
-                            Console.Write(String.Concat(Constants.Messages.ScriptExecutionFormatMessage, sqlFiles[j].FullName));
-                            Console.WriteLine(Constants.Messages.FailureMessage);
+                        var fileContent = FileHelper.GetFileContent(fullName);
+                        Console.WriteLine("Common script executed: " + fullName);
+                        var res = _provider.ExecuteScript(fileContent);
 
-                            retVal = DbUpgraderStatus.Error;
-                            break;
-                        }
+                        if (res) continue;
+
+                        Console.Write(String.Concat(Constants.Messages.ScriptExecutionFormatMessage, sqlFile.FullName));
+                        Console.WriteLine(Constants.Messages.FailureMessage);
+
+                        retVal = DbUpgraderStatus.Error;
+                        break;
                     }
                 }
             }
