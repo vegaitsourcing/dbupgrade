@@ -242,6 +242,21 @@ namespace Vega.DbUpgrade
 
                         var fileContent = FileHelper.GetFileContent(fullName);
                         Console.WriteLine("Common script executed: " + fullName);
+
+                        // replace the placeholders in the scripts if exists.
+                        if (placeholdersKeyValuePairs != null && placeholdersKeyValuePairs.Count > 0)
+                        {
+                            fileContent =
+                                placeholdersKeyValuePairs.Where(
+                                    placeholdersKeyValuePair =>
+                                    !string.IsNullOrEmpty(placeholdersKeyValuePair.Value))
+                                                         .Aggregate(fileContent,
+                                                                    (current, placeholdersKeyValuePair) =>
+                                                                    current.Replace(
+                                                                        placeholdersKeyValuePair.Key,
+                                                                        placeholdersKeyValuePair.Value));
+                        }
+
                         var res = _provider.ExecuteScript(fileContent);
 
                         if (res) continue;
