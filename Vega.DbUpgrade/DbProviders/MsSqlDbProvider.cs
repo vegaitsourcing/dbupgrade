@@ -44,16 +44,24 @@ namespace Vega.DbUpgrade.DbProviders
             {
                 using (var command = _database.GetDbCommand())
                 {
-                    command.Connection = connection;
-                    command.CommandTimeout = 0;
                     connection.Open();
 
-                    var commands = ParseSqlScript(fileContent);
-
-                    foreach (var commandText in commands)
+                    using (var trans = connection.BeginTransaction())
                     {
-                        command.CommandText = commandText;
-                        command.ExecuteNonQuery();
+                        command.Connection = connection;
+                        command.Transaction = trans;
+
+                        command.CommandTimeout = 0;
+
+                        var commands = ParseSqlScript(fileContent);
+
+                        foreach (var commandText in commands)
+                        {
+                            command.CommandText = commandText;
+                            command.ExecuteNonQuery();
+                        }
+
+                        trans.Commit();
                     }
                 }
             }
