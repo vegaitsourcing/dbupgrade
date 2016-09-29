@@ -257,6 +257,13 @@ namespace Vega.DbUpgrade
                                                                         placeholdersKeyValuePair.Value));
                         }
 
+                        if (sqlFile.Directory != null)
+                        {
+                            // do the dynamic replacement of the placeholder which represents the current folder of the Sql script.
+                            fileContent = fileContent.Replace(Constants.DefaultPlaceholders.CurrentFolder,
+                                                              sqlFile.Directory.FullName);
+                        }
+
                         var res = _provider.ExecuteScript(fileContent);
 
                         if (res) continue;

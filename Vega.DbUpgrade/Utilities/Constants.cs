@@ -153,6 +153,11 @@
             public const string Sql = "*.sql";
         }
 
+        public class DefaultPlaceholders
+        {
+            public const string CurrentFolder = "<CURRENT_FOLDER>";
+        }
+
         /// <summary>
         /// Defines XSD definitions
         /// </summary>
