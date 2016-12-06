@@ -156,8 +156,21 @@
         public class DefaultPlaceholders
         {
             public const string CurrentFolder = "<CURRENT_FOLDER>";
+            public const string DbUpgradeOperationScriptsContent = "<DB_UPGRADE_OPERATION:SCRIPTS_CONTENT>";
         }
 
+        public class ToolOperations
+        {
+            public const string CsvImport = "CSV_IMPORT";
+
+            public class Attributes
+            {
+                public const string Table = "TABLE";
+                public const string Columns = "COLUMNS";
+                public const string CsvFile = "CSV_FILE";
+            }
+        }
+        
         /// <summary>
         /// Defines XSD definitions
         /// </summary>

@@ -60,6 +60,7 @@
     <Compile Include="DbProviders\MsSqlDbProvider.cs" />
     <Compile Include="DbProviders\MySqlDbProvider.cs" />
     <Compile Include="DbUpgrader.cs" />
+    <Compile Include="Entities\CsvImport.cs" />
     <Compile Include="Interfaces\IDatabase.cs" />
     <Compile Include="Interfaces\IDbProvider.cs" />
     <Compile Include="Program.cs" />
@@ -68,6 +69,7 @@
     <Compile Include="Utilities\Enums.cs" />
     <Compile Include="Utilities\FileHelper.cs" />
     <Compile Include="Utilities\InputParametersValidator.cs" />
+    <Compile Include="Utilities\ToolOperationsHelper.cs" />
     <Compile Include="Utilities\XmlValidator.cs" />
   </ItemGroup>
   <ItemGroup>

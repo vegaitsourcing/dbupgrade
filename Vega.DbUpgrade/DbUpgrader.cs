@@ -161,6 +161,7 @@ namespace Vega.DbUpgrade
         private DbUpgraderStatus ExecuteScripts(List<DirectoryInfo> dirs, bool updateChangeLog, Dictionary<string, string> placeholdersKeyValuePairs)
         {
             var retVal = DbUpgraderStatus.Success;
+            var toolOperationsHelper = new ToolOperationsHelper();
             if (updateChangeLog)
             {
                 // Check definition.xml files. Each version should have a definition.xml file
@@ -260,6 +261,9 @@ namespace Vega.DbUpgrade
                         if (sqlFile.Directory != null)
                         {
                             // do the dynamic replacement of the placeholder which represents the current folder of the Sql script.
+                            fileContent = toolOperationsHelper.GetCsvImportReadySqlScript(fileContent,
+                                                                                          sqlFile.Directory.FullName);
+
                             fileContent = fileContent.Replace(Constants.DefaultPlaceholders.CurrentFolder,
                                                               sqlFile.Directory.FullName);
                         }
