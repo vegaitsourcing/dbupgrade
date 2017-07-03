@@ -71,6 +71,22 @@ namespace Vega.DbUpgrade.Utilities
                 if (i++ <= 0) continue;
 
                 var values = CsvRowToStringArray(csvLine);
+                if (csvImport.Columns.Count() < values.Count())
+                {
+                    // fix the case when the excel add the empty column to the end of the csv rows.
+                    if (csvImport.Columns.Count() + 1 == values.Count())
+                    {
+                        values = values.Take(values.Count() - 1).ToArray();
+                    }
+                    else
+                    {
+                        throw new ApplicationException(
+                            string.Format(
+                                "The header column number: {0} and row column number: {1} doesn't match. Column values are: {2}.",
+                                csvImport.Columns.Count(), values.Count(), string.Join(",", values)));
+                    }
+                }
+                
                 retVal.AppendLine(string.Concat(insertFormat,
                                                 string.Format(" VALUES({0});",
                                                               string.Join(",", values))));
