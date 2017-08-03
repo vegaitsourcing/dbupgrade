@@ -156,7 +156,7 @@
         public class DefaultPlaceholders
         {
             public const string CurrentFolder = "<CURRENT_FOLDER>";
-            public const string DbUpgradeOperationScriptsContent = "<DB_UPGRADE_OPERATION:SCRIPTS_CONTENT>";
+            public const string DbUpgradeOperationScriptsContent = "<DB_UPGRADE_OPERATION:SCRIPTS_CONTENT{0}>";
         }
 
         public class ToolOperations
@@ -166,6 +166,8 @@
             public class Attributes
             {
                 public const string Table = "TABLE";
+                public const string UpgradeOperationId = "OPERATION_ID";
+                public const string Delimiter = "DELIMITER";
                 public const string Columns = "COLUMNS";
                 public const string CsvFile = "CSV_FILE";
             }

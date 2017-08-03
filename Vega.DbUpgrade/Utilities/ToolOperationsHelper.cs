@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using CsvHelper;
 using Vega.DbUpgrade.Entities;
 
 namespace Vega.DbUpgrade.Utilities
@@ -11,20 +12,22 @@ namespace Vega.DbUpgrade.Utilities
     {
         public string GetCsvImportReadySqlScript(string fileContent, string currentFolder)
         {
-            if (fileContent.Contains(Constants.DefaultPlaceholders.DbUpgradeOperationScriptsContent))
+            var csvImports = new List<CsvImport>();
+            foreach (var fileLine in fileContent.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None))
             {
-                var startIndexOfOperation = fileContent.IndexOf(Constants.ToolOperations.CsvImport,
-                                                                StringComparison.Ordinal);
-                if (startIndexOfOperation > 0)
+                if (fileLine.Contains(Constants.ToolOperations.CsvImport))
                 {
-                    var endIndexOfOperationDefinition = fileContent.Substring(startIndexOfOperation)
-                                                                   .IndexOf(">", StringComparison.Ordinal);
+                    var startIndexOfOperation = fileLine.IndexOf(Constants.ToolOperations.CsvImport,
+                        StringComparison.Ordinal);
+
+                    var endIndexOfOperationDefinition = fileLine.Substring(startIndexOfOperation)
+                        .IndexOf(">", StringComparison.Ordinal);
                     if (endIndexOfOperationDefinition > 0)
                     {
-                        var operationDefinitionString = fileContent.Substring(startIndexOfOperation,
-                                                                              endIndexOfOperationDefinition + 1);
+                        var operationDefinitionString = fileLine.Substring(startIndexOfOperation,
+                            endIndexOfOperationDefinition + 1);
                         var tableIndex = operationDefinitionString.IndexOf(Constants.ToolOperations.Attributes.Table,
-                                                                           StringComparison.Ordinal);
+                            StringComparison.Ordinal);
                         var columnsIndex = operationDefinitionString.IndexOf(
                             Constants.ToolOperations.Attributes.Columns, StringComparison.Ordinal);
                         var csvFileIndex = operationDefinitionString.IndexOf(
@@ -36,23 +39,42 @@ namespace Vega.DbUpgrade.Utilities
                         }
 
                         var csvImport = new CsvImport
-                            {
-                                Table =
-                                    GetAttributeValue(operationDefinitionString,
-                                                      Constants.ToolOperations.Attributes.Table),
-                                Columns =
-                                    GetAttributeValue(operationDefinitionString,
-                                                      Constants.ToolOperations.Attributes.Columns).Split(',').ToList(),
-                                CsvFile =
-                                    GetAttributeValue(operationDefinitionString,
-                                                      Constants.ToolOperations.Attributes.CsvFile)
-                            };
+                        {
+                            // if not defined, the default OperationId is empty.
+                            OperationId = operationDefinitionString.IndexOf(
+                                              Constants.ToolOperations.Attributes.UpgradeOperationId,
+                                              StringComparison.Ordinal) > 0
+                                ? GetAttributeValue(operationDefinitionString,
+                                    Constants.ToolOperations.Attributes.UpgradeOperationId)
+                                : string.Empty,
+                            // if not defined, default delimiter is set to comma.
+                            Delimiter = operationDefinitionString.IndexOf(
+                                            Constants.ToolOperations.Attributes.Delimiter, StringComparison.Ordinal) > 0
+                                ? GetAttributeValue(operationDefinitionString,
+                                    Constants.ToolOperations.Attributes.Delimiter)
+                                : ",",
+                            Table =
+                                GetAttributeValue(operationDefinitionString,
+                                    Constants.ToolOperations.Attributes.Table),
+                            Columns =
+                                GetAttributeValue(operationDefinitionString,
+                                    Constants.ToolOperations.Attributes.Columns).Split(',').ToList(),
+                            CsvFiles = GetAttributeValue(operationDefinitionString,
+                                Constants.ToolOperations.Attributes.CsvFile).Split(',').ToList()
+                        };
 
-                        fileContent = fileContent.Replace(
-                            Constants.DefaultPlaceholders.DbUpgradeOperationScriptsContent,
-                            string.Concat("\n", GetCsvImportSqlScript(currentFolder, csvImport)));
+                        csvImports.Add(csvImport);
                     }
                 }
+            }
+
+            // handle all CSV Import operations and replace the placeholders with the proper INSERT script.
+            foreach (var csvImport in csvImports)
+            {
+                fileContent = fileContent.Replace(
+                    string.Format(Constants.DefaultPlaceholders.DbUpgradeOperationScriptsContent,
+                        csvImport.OperationId),
+                    string.Concat("\n", GetCsvImportSqlScript(currentFolder, csvImport)));
             }
 
             return fileContent;
@@ -61,66 +83,40 @@ namespace Vega.DbUpgrade.Utilities
         private static string GetCsvImportSqlScript(string currentFolder, CsvImport csvImport)
         {
             var retVal = new StringBuilder();
-            var csvContent = File.ReadAllLines(string.Concat(currentFolder, @"\", csvImport.CsvFile));
-            var insertFormat = string.Format("INSERT INTO {0} ({1})", csvImport.Table,
-                                             string.Join(",", csvImport.Columns.ToArray()));
-            var i = 0;
-            foreach (var csvLine in csvContent)
-            {
-                // skip the header line.
-                if (i++ <= 0) continue;
 
-                var values = CsvRowToStringArray(csvLine);
-                if (csvImport.Columns.Count() < values.Count())
+            var insertFormat = string.Format("INSERT INTO {0} ({1})", csvImport.Table,
+                string.Join(",", csvImport.Columns.ToArray()));
+
+            foreach (var csvFile in csvImport.CsvFiles)
+            {
+                using (var streamReader = new StreamReader(string.Concat(currentFolder, @"\", csvFile)))
                 {
-                    // fix the case when the excel add the empty column to the end of the csv rows.
-                    if (csvImport.Columns.Count() + 1 == values.Count())
+                    var csv = new CsvReader(streamReader);
+                    csv.Configuration.Delimiter = "\t";
+                    csv.Configuration.HasHeaderRecord = true;
+
+                    var index = 0;
+                    while (csv.Read())
                     {
-                        values = values.Take(values.Count() - 1).ToArray();
-                    }
-                    else
-                    {
-                        throw new ApplicationException(
-                            string.Format(
-                                "The header column number: {0} and row column number: {1} doesn't match. Column values are: {2}.",
-                                csvImport.Columns.Count(), values.Count(), string.Join(",", values)));
+                        // skip the header line.
+                        if (index++ <= 0) continue;
+
+                        var values = new string[csv.FieldHeaders.Length];
+                        for (var i = 0; i < csv.FieldHeaders.Length; i++)
+                        {
+                            values[i] = csv.GetField<string>(i);
+                        }
+
+                        retVal.AppendLine(string.Concat(insertFormat,
+                            string.Format(" VALUES({0});",
+                                string.Join(",", values
+                                    .Select(retItem => string.Concat("N'", retItem.Replace("'", "''"), "'"))
+                                    .ToArray()))));
                     }
                 }
-                
-                retVal.AppendLine(string.Concat(insertFormat,
-                                                string.Format(" VALUES({0});",
-                                                              string.Join(",", values))));
             }
 
             return retVal.ToString();
-        }
-
-        private static string[] CsvRowToStringArray(string row, char fieldSep = '\t', char stringSep = '\"')
-        {
-            var hasQuote = false;
-            var stringBuilder = new StringBuilder();
-            var values = new List<string>();
-
-            foreach (var character in row)
-            {
-                if ((character == fieldSep && !hasQuote))
-                {
-                    values.Add(stringBuilder.ToString());
-                    stringBuilder.Clear();
-                }
-                else if (character == stringSep)
-                {
-                    hasQuote = !hasQuote;
-                }
-                else
-                {
-                    stringBuilder.Append(character);
-                }
-            }
-
-            values.Add(stringBuilder.ToString());
-
-            return values.Select(retItem => string.Concat("N'", retItem.Replace("'", "''"), "'")).ToArray();
         }
 
         private static string GetAttributeValue(string operationDefinitionString, string attribute)
