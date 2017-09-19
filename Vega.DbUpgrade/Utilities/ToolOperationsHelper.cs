@@ -99,7 +99,7 @@ namespace Vega.DbUpgrade.Utilities
                     while (csv.Read())
                     {
                         // skip the header line.
-                        if (index++ <= 0) continue;
+                        if (++index <= 0) continue;
 
                         var values = new string[csv.FieldHeaders.Length];
                         for (var i = 0; i < csv.FieldHeaders.Length; i++)
