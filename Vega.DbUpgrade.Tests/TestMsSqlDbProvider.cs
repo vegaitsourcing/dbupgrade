@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Data.SqlClient;
 using Moq;
 using Vega.DbUpgrade.Databases;
 using Vega.DbUpgrade.DbProviders;
@@ -35,6 +36,9 @@ namespace Vega.DbUpgrade.Tests
             var dbConnectionMock = new Mock<IDbConnection>();
             var databaseMock = new Mock<IDatabase>();
             var dbCommandMock = new Mock<IDbCommand>();
+            var transactionMock = new Mock<IDbTransaction>();
+
+            dbConnectionMock.Setup(t => t.BeginTransaction()).Returns(transactionMock.Object);
 
             databaseMock.Setup(t => t.GetDbConnection()).Returns(dbConnectionMock.Object);
             databaseMock.Setup(t => t.GetDbCommand()).Returns(dbCommandMock.Object);
@@ -67,7 +71,9 @@ namespace Vega.DbUpgrade.Tests
             var dbConnectionMock = new Mock<IDbConnection>();
             var databaseMock = new Mock<IDatabase>();
             var dbCommandMock = new Mock<IDbCommand>();
+            var transactionMock = new Mock<IDbTransaction>();
 
+            dbConnectionMock.Setup(t => t.BeginTransaction()).Returns(transactionMock.Object);
             databaseMock.Setup(t => t.GetDbConnection()).Returns(dbConnectionMock.Object);
             databaseMock.Setup(t => t.GetDbCommand()).Returns(dbCommandMock.Object);
 
@@ -99,7 +105,9 @@ namespace Vega.DbUpgrade.Tests
             var dbConnectionMock = new Mock<IDbConnection>();
             var databaseMock = new Mock<IDatabase>();
             var dbCommandMock = new Mock<IDbCommand>();
+            var transactionMock = new Mock<IDbTransaction>();
 
+            dbConnectionMock.Setup(t => t.BeginTransaction()).Returns(transactionMock.Object);
             databaseMock.Setup(t => t.GetDbConnection()).Returns(dbConnectionMock.Object);
             databaseMock.Setup(t => t.GetDbCommand()).Returns(dbCommandMock.Object);
 
